@@ -1,5 +1,10 @@
 export type ImagePolicy = "keep" | "omit-local";
 
+export interface PinnedMenuOption {
+  label: string;
+  sourceDir: string;
+}
+
 export interface UserConfig {
   vaultDir?: string;
   outDir?: string;
@@ -25,6 +30,7 @@ export interface BuildOptions {
   exclude: string[];
   newWithinDays: number;
   recentLimit: number;
+  pinnedMenu: PinnedMenuOption | null;
   wikilinks: boolean;
   imagePolicy: ImagePolicy;
   gfm: boolean;

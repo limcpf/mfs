@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { buildSite, cleanBuildArtifacts } from "./build";
-import { parseCliArgs, loadUserConfig, printHelp, resolveBuildOptions } from "./config";
+import { parseCliArgs, loadPinnedMenuConfig, loadUserConfig, printHelp, resolveBuildOptions } from "./config";
 import { runDev } from "./dev";
 
 async function main(): Promise<void> {
@@ -12,7 +12,8 @@ async function main(): Promise<void> {
   }
 
   const userConfig = await loadUserConfig();
-  const buildOptions = resolveBuildOptions(cli, userConfig);
+  const pinnedMenu = await loadPinnedMenuConfig(cli.menuConfigPath);
+  const buildOptions = resolveBuildOptions(cli, userConfig, pinnedMenu);
 
   if (cli.command === "clean") {
     await cleanBuildArtifacts(buildOptions.outDir);

@@ -118,7 +118,8 @@ function escapeHtmlAttr(input: string): string {
 
 function createMarkdownIt(highlighter: Highlighter, theme: string, gfm: boolean): MarkdownIt {
   const md = new MarkdownIt({
-    html: false,
+    // Allow raw HTML in markdown (e.g. <img ... />).
+    html: true,
     linkify: true,
     typographer: false,
     breaks: false,

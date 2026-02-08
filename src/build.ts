@@ -30,6 +30,10 @@ interface BuildResult {
   skippedDocs: number;
 }
 
+function toContentFileName(id: string): string {
+  return `${makeHash(id)}.html`;
+}
+
 function toCachePath(): string {
   return path.join(process.cwd(), CACHE_DIR_NAME, CACHE_FILE_NAME);
 }
@@ -101,6 +105,88 @@ function parseBranch(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+function normalizeFrontmatterDate(value: unknown): string | null {
+  const toLocalIsoLike = (input: Date): string => {
+    const yyyy = input.getFullYear();
+    const mm = String(input.getMonth() + 1).padStart(2, "0");
+    const dd = String(input.getDate()).padStart(2, "0");
+    const hh = String(input.getHours()).padStart(2, "0");
+    const mi = String(input.getMinutes()).padStart(2, "0");
+    const ss = String(input.getSeconds()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+  };
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (value instanceof Date && Number.isFinite(value.getTime())) {
+    return toLocalIsoLike(value);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const parsed = new Date(value);
+    if (Number.isFinite(parsed.getTime())) {
+      return toLocalIsoLike(parsed);
+    }
+  }
+
+  return null;
+}
+
+function extractFrontmatterScalar(raw: string, key: string): string | null {
+  const frontmatterMatch = raw.match(/^---\s*\r?\n([\s\S]*?)\r?\n---/);
+  if (!frontmatterMatch) {
+    return null;
+  }
+
+  const body = frontmatterMatch[1];
+  const lineRegex = new RegExp(`^${key}:\\s*(.+?)\\s*$`, "m");
+  const lineMatch = body.match(lineRegex);
+  if (!lineMatch) {
+    return null;
+  }
+
+  let value = lineMatch[1].trim();
+  if (!value || value === "|" || value === ">") {
+    return null;
+  }
+
+  const quoted =
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"));
+  if (quoted) {
+    value = value.slice(1, -1).trim();
+  }
+
+  return value.length > 0 ? value : null;
+}
+
+function pickDocDate(frontmatter: Record<string, unknown>, raw: string, mtimeMs: number): string {
+  const explicitLiteral = extractFrontmatterScalar(raw, "date");
+  if (explicitLiteral) {
+    return explicitLiteral;
+  }
+
+  const createdLiteral = extractFrontmatterScalar(raw, "createdDate");
+  if (createdLiteral) {
+    return createdLiteral;
+  }
+
+  const explicit = normalizeFrontmatterDate(frontmatter.date);
+  if (explicit) {
+    return explicit;
+  }
+
+  const created = normalizeFrontmatterDate(frontmatter.createdDate);
+  if (created) {
+    return created;
+  }
+
+  return formatDateIso(new Date(mtimeMs));
+}
+
 async function readPublishedDocs(options: BuildOptions): Promise<DocRecord[]> {
   const isExcluded = buildExcluder(options.exclude);
   const mdFiles = await walkMarkdownFiles(options.vaultDir, options.vaultDir, isExcluded);
@@ -139,10 +225,10 @@ async function readPublishedDocs(options: BuildOptions): Promise<DocRecord[]> {
       relNoExt,
       id,
       route,
-      contentUrl: `/content/${id}.html`,
+      contentUrl: `/content/${toContentFileName(id)}`,
       fileName,
       title: typeof parsed.data.title === "string" && parsed.data.title.trim().length > 0 ? parsed.data.title.trim() : makeTitleFromFileName(fileName),
-      date: typeof parsed.data.date === "string" ? parsed.data.date : formatDateIso(new Date(mtimeMs)),
+      date: pickDocDate(parsed.data as Record<string, unknown>, raw, mtimeMs),
       description: typeof parsed.data.description === "string" ? parsed.data.description : undefined,
       tags: parseStringArray(parsed.data.tags),
       mtimeMs,
@@ -240,6 +326,27 @@ function sortTree(nodes: TreeNode[]): TreeNode[] {
   return nodes;
 }
 
+function buildPinnedMenuFolder(docs: DocRecord[], options: BuildOptions): FolderNode | null {
+  if (!options.pinnedMenu) {
+    return null;
+  }
+
+  const sourceDir = options.pinnedMenu.sourceDir;
+  const sourcePrefix = `${sourceDir}/`;
+  const children = docs
+    .filter((doc) => doc.relNoExt.startsWith(sourcePrefix))
+    .sort((left, right) => left.relNoExt.localeCompare(right.relNoExt, "ko-KR"))
+    .map((doc) => fileNodeFromDoc(doc));
+
+  return {
+    type: "folder",
+    name: options.pinnedMenu.label,
+    path: `__virtual__/pinned/${sourceDir}`,
+    virtual: true,
+    children,
+  };
+}
+
 function buildTree(docs: DocRecord[], options: BuildOptions): TreeNode[] {
   const root: FolderNode = {
     type: "folder",
@@ -292,7 +399,12 @@ function buildTree(docs: DocRecord[], options: BuildOptions): TreeNode[] {
     children: recentChildren,
   };
 
-  return [recentFolder, ...root.children];
+  const pinnedFolder = buildPinnedMenuFolder(docs, options);
+  if (!pinnedFolder) {
+    return [recentFolder, ...root.children];
+  }
+
+  return [pinnedFolder, recentFolder, ...root.children];
 }
 
 function buildManifest(docs: DocRecord[], tree: TreeNode[], options: BuildOptions): Manifest {
@@ -378,8 +490,10 @@ async function cleanRemovedOutputs(outDir: string, oldCache: BuildCache, current
       continue;
     }
 
-    const contentPath = path.join(outDir, "content", `${id}.html`);
-    await removeFileIfExists(contentPath);
+    const legacyContentPath = path.join(outDir, "content", `${id}.html`);
+    const hashedContentPath = path.join(outDir, "content", toContentFileName(id));
+    await removeFileIfExists(legacyContentPath);
+    await removeFileIfExists(hashedContentPath);
 
     const routeDir = path.join(outDir, entry.route.replace(/^\//, "").replace(/\/$/, ""));
     const routeIndex = path.join(routeDir, "index.html");
@@ -428,7 +542,7 @@ export async function buildSite(options: BuildOptions): Promise<BuildResult> {
       [doc.raw, options.shikiTheme, options.imagePolicy, options.wikilinks ? "wikilinks-on" : "wikilinks-off", globalFingerprint].join("::"),
     );
     const previous = previousCache.docs[doc.id];
-    const outputPath = path.join(options.outDir, "content", `${doc.id}.html`);
+    const outputPath = path.join(options.outDir, "content", toContentFileName(doc.id));
     const unchanged = previous?.hash === sourceHash && (await fileExists(outputPath));
 
     nextCache.docs[doc.id] = {

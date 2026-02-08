@@ -27,7 +27,7 @@ export function renderAppShellHtml(): string {
             <span class="branch-badge" aria-hidden="true">
               <span class="material-symbols-outlined icon-branch">call_split</span>branch
             </span>
-            <select id="sidebar-branch-select" class="branch-select" aria-label="브랜치 선택"></select>
+            <div id="sidebar-branch-pills" class="branch-pills" role="group" aria-label="브랜치 선택"></div>
             <span id="sidebar-branch-info" class="branch-info">publish: true</span>
           </div>
         </div>

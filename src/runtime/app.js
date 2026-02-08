@@ -21,6 +21,19 @@ function escapeHtmlAttr(input) {
     .replace(/>/g, "&gt;");
 }
 
+function toSafeUrlPath(input) {
+  const value = String(input);
+  return value
+    .split("/")
+    .map((segment, index) => {
+      if (index === 0 && segment === "") {
+        return "";
+      }
+      return encodeURIComponent(segment);
+    })
+    .join("/");
+}
+
 function normalizeRoute(pathname) {
   let route = decodeURIComponent(pathname || "/");
   if (!route.startsWith("/")) {
@@ -30,6 +43,47 @@ function normalizeRoute(pathname) {
     route = `${route}/`;
   }
   return route;
+}
+
+function resolveRouteFromLocation(routeMap) {
+  const direct = normalizeRoute(location.pathname);
+  if (routeMap[direct]) {
+    return direct;
+  }
+
+  if (location.search.length > 1) {
+    const recovered = normalizeRoute(`${location.pathname}?${location.search.slice(1)}`);
+    if (routeMap[recovered]) {
+      history.replaceState(null, "", toSafeUrlPath(recovered));
+      return recovered;
+    }
+  }
+
+  return direct;
+}
+
+function formatMetaDateTime(value) {
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) {
+    return null;
+  }
+
+  const yyyy = parsed.getFullYear();
+  const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+  const dd = String(parsed.getDate()).padStart(2, "0");
+  const hh = String(parsed.getHours()).padStart(2, "0");
+  const mi = String(parsed.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return tags
+    .map((tag) => String(tag).trim().replace(/^#+/, ""))
+    .filter(Boolean);
 }
 
 function normalizeBranch(value) {
@@ -471,16 +525,25 @@ function renderBreadcrumb(route) {
 
 function renderMeta(doc) {
   const items = [];
-  
-  if (doc.date) {
-    items.push(`<span class="meta-item"><span class="material-symbols-outlined">calendar_today</span>${doc.date}</span>`);
+
+  const createdAt = formatMetaDateTime(doc.date);
+  if (createdAt) {
+    items.push(
+      `<span class="meta-item"><span class="material-symbols-outlined">calendar_today</span>${escapeHtmlAttr(createdAt)}</span>`,
+    );
   }
 
-  items.push(`<span class="meta-item"><span class="material-symbols-outlined">schedule</span>updated ${new Date(doc.mtime).toISOString().slice(0, 10)}</span>`);
+  const updatedAt = formatMetaDateTime(doc.mtime);
+  if (updatedAt) {
+    items.push(
+      `<span class="meta-item"><span class="material-symbols-outlined">schedule</span>updated ${escapeHtmlAttr(updatedAt)}</span>`,
+    );
+  }
 
-  if (doc.tags?.length) {
-    const tagsStr = doc.tags.map((tag) => `#${tag}`).join(" ");
-    items.push(`<span class="meta-item meta-tags"><span class="material-symbols-outlined">tag</span>${tagsStr}</span>`);
+  const tags = normalizeTags(doc.tags);
+  if (tags.length > 0) {
+    const tagsStr = tags.map((tag) => `#${escapeHtmlAttr(tag)}`).join(" ");
+    items.push(`<span class="meta-item meta-tags">${tagsStr}</span>`);
   }
 
   return items.join("");
@@ -496,14 +559,14 @@ function renderNav(docs, currentId) {
   let html = "";
 
   if (prev) {
-    html += `<a href="${prev.route}" class="nav-link nav-link-prev" data-route="${prev.route}">
+    html += `<a href="${toSafeUrlPath(prev.route)}" class="nav-link nav-link-prev" data-route="${escapeHtmlAttr(prev.route)}">
       <div class="nav-link-label"><span class="material-symbols-outlined">arrow_back</span>Previous</div>
       <div class="nav-link-title">${prev.title}</div>
     </a>`;
   }
 
   if (next) {
-    html += `<a href="${next.route}" class="nav-link nav-link-next" data-route="${next.route}">
+    html += `<a href="${toSafeUrlPath(next.route)}" class="nav-link nav-link-next" data-route="${escapeHtmlAttr(next.route)}">
       <div class="nav-link-label">Next<span class="material-symbols-outlined">arrow_forward</span></div>
       <div class="nav-link-title">${next.title}</div>
     </a>`;
@@ -521,7 +584,7 @@ async function start() {
   const sidebarClose = document.getElementById("sidebar-close");
   const sidebarOverlay = document.getElementById("sidebar-overlay");
   const treeLabelTooltip = document.getElementById("tree-label-tooltip");
-  const sidebarBranchSelect = document.getElementById("sidebar-branch-select");
+  const sidebarBranchPills = document.getElementById("sidebar-branch-pills");
   const sidebarBranchInfo = document.getElementById("sidebar-branch-info");
   const settingsToggle = document.getElementById("settings-toggle");
   const settingsClose = document.getElementById("settings-close");
@@ -869,15 +932,25 @@ async function start() {
     return left.localeCompare(right, "ko-KR");
   });
 
-  if (sidebarBranchSelect instanceof HTMLSelectElement) {
-    sidebarBranchSelect.innerHTML = "";
-    for (const branch of availableBranches) {
-      const option = document.createElement("option");
-      option.value = branch;
-      option.textContent = branch;
-      sidebarBranchSelect.appendChild(option);
+  const renderBranchPills = () => {
+    if (!(sidebarBranchPills instanceof HTMLElement)) {
+      return;
     }
-  }
+
+    sidebarBranchPills.innerHTML = "";
+    for (const branch of availableBranches) {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = "branch-pill";
+      pill.dataset.branch = branch;
+      pill.textContent = branch;
+      pill.setAttribute("aria-pressed", "false");
+      pill.addEventListener("click", () => {
+        void setActiveBranch(branch);
+      });
+      sidebarBranchPills.appendChild(pill);
+    }
+  };
 
   const savedBranch = normalizeBranch(localStorage.getItem(BRANCH_KEY));
   let activeBranch = savedBranch && availableBranchSet.has(savedBranch) ? savedBranch : defaultBranch;
@@ -893,8 +966,15 @@ async function start() {
           ? `publish: true · ${activeBranch} + unclassified`
           : `publish: true · ${activeBranch} only`;
     }
-    if (sidebarBranchSelect instanceof HTMLSelectElement) {
-      sidebarBranchSelect.value = activeBranch;
+    if (sidebarBranchPills instanceof HTMLElement) {
+      for (const pill of sidebarBranchPills.querySelectorAll(".branch-pill")) {
+        if (!(pill instanceof HTMLButtonElement)) {
+          continue;
+        }
+        const isActive = pill.dataset.branch === activeBranch;
+        pill.classList.toggle("is-active", isActive);
+        pill.setAttribute("aria-pressed", String(isActive));
+      }
     }
   };
 
@@ -957,7 +1037,7 @@ async function start() {
         navEl.innerHTML = "";
         markActive("");
         if (push) {
-          history.pushState(null, "", route);
+          history.pushState(null, "", toSafeUrlPath(route));
         }
         return;
       }
@@ -968,7 +1048,7 @@ async function start() {
       }
 
       if (push) {
-        history.pushState(null, "", route);
+        history.pushState(null, "", toSafeUrlPath(route));
       }
 
       state.currentDocId = id;
@@ -977,7 +1057,7 @@ async function start() {
       titleEl.textContent = doc.title;
       metaEl.innerHTML = renderMeta(doc);
 
-      const res = await fetch(doc.contentUrl);
+      const res = await fetch(toSafeUrlPath(doc.contentUrl));
       if (!res.ok) {
         contentEl.innerHTML = '<p class="placeholder">본문을 불러오지 못했습니다.</p>';
         navEl.innerHTML = "";
@@ -1033,7 +1113,7 @@ async function start() {
     updateBranchInfo();
     renderTree(state);
 
-    const currentRoute = normalizeRoute(location.pathname);
+    const currentRoute = resolveRouteFromLocation(view.routeMap);
     if (view.routeMap[currentRoute]) {
       await state.navigate(currentRoute, false);
       return;
@@ -1043,24 +1123,17 @@ async function start() {
     await state.navigate(fallbackRoute, true);
   };
 
-  sidebarBranchSelect?.addEventListener("change", async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLSelectElement)) {
-      return;
-    }
-    await setActiveBranch(target.value);
-  });
-
+  renderBranchPills();
   updateBranchInfo();
   renderTree(state);
 
-  const currentRoute = normalizeRoute(location.pathname);
+  const currentRoute = resolveRouteFromLocation(view.routeMap);
   const initialRoute = currentRoute === "/" ? view.docs[0]?.route || "/" : currentRoute;
   handleLayoutChange();
   await state.navigate(initialRoute, currentRoute === "/" && initialRoute !== "/");
 
   window.addEventListener("popstate", async () => {
-    await state.navigate(location.pathname, false);
+    await state.navigate(resolveRouteFromLocation(view.routeMap), false);
   });
 }
 

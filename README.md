@@ -44,6 +44,7 @@ bun run blog [build|dev|clean] [options]
 - `--exclude <glob>`: 제외 패턴 (반복 가능, 기본 포함: `.obsidian/**`)
 - `--new-within-days <n>`: NEW 배지 기준 일수 (기본: `7`)
 - `--recent-limit <n>`: Recent 가상 폴더 노출 개수 (기본: `5`)
+- `--menu-config <path>`: 상단 고정 메뉴(JSON) 설정 파일 경로
 - `--port <n>`: dev 서버 포트 (기본: `3000`)
 
 예시
@@ -56,7 +57,22 @@ bun run dev -- --port 4000
 
 # 제외 패턴 추가
 bun run build -- --exclude "private/**" --exclude "**/drafts/**"
+
+# 상단 고정 메뉴 추가
+bun run build -- --menu-config ./menu.config.json
 ```
+
+고정 메뉴 설정 파일 예시 (`menu.config.json`)
+```json
+{
+  "pinnedMenu": {
+    "label": "NOTICE",
+    "sourceDir": "Log/(Blog)/Notice"
+  }
+}
+```
+- `label`: 탐색기에서 Recent 위에 표시할 고정 메뉴 이름
+- `sourceDir`: vault 기준 실제 물리 디렉터리 경로 (해당 하위 문서만 고정 메뉴에 노출)
 
 **설정 파일**
 프로젝트 루트에 `blog.config.ts|js|mjs|cjs`를 두면 CLI 옵션과 병합됩니다.
@@ -89,7 +105,7 @@ export default {
 - `branch`가 없으면 "브랜치 분류 없음"으로 간주되어 기본 브랜치에서만 노출됩니다.
 - 기본 브랜치 뷰는 `dev + 분류 없음`이며, 다른 브랜치는 해당 브랜치 글만 노출됩니다.
 - `title`이 없으면 파일명에서 자동 생성됩니다.
-- `date`가 없으면 파일 수정 시각을 기준으로 합니다.
+- `date`가 없으면 `createdDate`, 그것도 없으면 파일 수정 시각을 기준으로 합니다.
 - `tags`는 문자열 배열로 작성합니다.
 
 ```md
