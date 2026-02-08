@@ -63,6 +63,23 @@ export function renderAppShellHtml(): string {
                 <span>왼쪽 하단</span>
               </label>
             </fieldset>
+            <fieldset class="settings-group">
+              <legend>테마</legend>
+              <div class="settings-segment" role="radiogroup" aria-label="테마 선택">
+                <label class="settings-segment-option">
+                  <input type="radio" name="theme-mode" value="light" />
+                  <span>Light</span>
+                </label>
+                <label class="settings-segment-option">
+                  <input type="radio" name="theme-mode" value="system" checked />
+                  <span>System</span>
+                </label>
+                <label class="settings-segment-option">
+                  <input type="radio" name="theme-mode" value="dark" />
+                  <span>Dark</span>
+                </label>
+              </div>
+            </fieldset>
             <button id="settings-close" class="settings-close" type="button">닫기</button>
           </section>
         </div>

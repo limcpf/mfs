@@ -1,6 +1,8 @@
 const EXPANDED_KEY = "fsblog.expanded";
 const COMPACT_LAYOUT_QUERY = "(max-width: 1024px)";
 const MENU_TOGGLE_POSITION_KEY = "fsblog.menuTogglePosition";
+const THEME_MODE_KEY = "fsblog.themeMode";
+const DARK_MODE_QUERY = "(prefers-color-scheme: dark)";
 const SIDEBAR_WIDTH_KEY = "fsblog.desktopSidebarWidth";
 const TYPEAHEAD_RESET_MS = 700;
 const DESKTOP_SIDEBAR_DEFAULT = 420;
@@ -171,6 +173,34 @@ function loadMenuTogglePosition() {
 
 function persistMenuTogglePosition(position) {
   localStorage.setItem(MENU_TOGGLE_POSITION_KEY, position);
+}
+
+function normalizeThemeMode(mode) {
+  if (mode === "light" || mode === "dark" || mode === "system") {
+    return mode;
+  }
+  return "system";
+}
+
+function loadThemeMode() {
+  return normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY));
+}
+
+function persistThemeMode(mode) {
+  localStorage.setItem(THEME_MODE_KEY, mode);
+}
+
+function resolveAppliedTheme(mode, prefersDark) {
+  if (mode === "system") {
+    return prefersDark ? "dark" : "light";
+  }
+  return mode;
+}
+
+function applyTheme(mode, prefersDark) {
+  const appliedTheme = resolveAppliedTheme(mode, prefersDark);
+  document.documentElement.dataset.theme = appliedTheme;
+  document.documentElement.style.colorScheme = appliedTheme;
 }
 
 function loadDesktopSidebarWidth() {
@@ -590,6 +620,7 @@ async function start() {
   const settingsClose = document.getElementById("settings-close");
   const settingsPanel = document.getElementById("sidebar-settings");
   const menuTogglePositionInputs = document.querySelectorAll('input[name="menu-toggle-position"]');
+  const themeModeInputs = document.querySelectorAll('input[name="theme-mode"]');
   const breadcrumbEl = document.getElementById("viewer-breadcrumb");
   const titleEl = document.getElementById("viewer-title");
   const metaEl = document.getElementById("viewer-meta");
@@ -604,14 +635,24 @@ async function start() {
   let resizeStartWidth = desktopSidebarWidth;
 
   const compactMediaQuery = window.matchMedia(COMPACT_LAYOUT_QUERY);
+  const darkModeMediaQuery = window.matchMedia(DARK_MODE_QUERY);
   const savedTogglePosition = loadMenuTogglePosition();
+  let themeMode = loadThemeMode();
   applyMenuTogglePosition(savedTogglePosition);
+  applyTheme(themeMode, darkModeMediaQuery.matches);
 
   for (const input of menuTogglePositionInputs) {
     if (!(input instanceof HTMLInputElement)) {
       continue;
     }
     input.checked = input.value === savedTogglePosition;
+  }
+
+  for (const input of themeModeInputs) {
+    if (!(input instanceof HTMLInputElement)) {
+      continue;
+    }
+    input.checked = input.value === themeMode;
   }
 
   const isCompactLayout = () => compactMediaQuery.matches;
@@ -667,7 +708,7 @@ async function start() {
     }
     settingsPanel.hidden = false;
     setSettingsExpanded(true);
-    const checkedInput = settingsPanel.querySelector('input[name="menu-toggle-position"]:checked');
+    const checkedInput = settingsPanel.querySelector('input[name="theme-mode"]:checked, input[name="menu-toggle-position"]:checked');
     if (checkedInput instanceof HTMLElement) {
       checkedInput.focus();
     }
@@ -842,6 +883,27 @@ async function start() {
       persistMenuTogglePosition(nextPosition);
     });
   }
+
+  for (const input of themeModeInputs) {
+    if (!(input instanceof HTMLInputElement)) {
+      continue;
+    }
+    input.addEventListener("change", () => {
+      if (!input.checked) {
+        return;
+      }
+      themeMode = normalizeThemeMode(input.value);
+      applyTheme(themeMode, darkModeMediaQuery.matches);
+      persistThemeMode(themeMode);
+    });
+  }
+
+  darkModeMediaQuery.addEventListener("change", (event) => {
+    if (themeMode !== "system") {
+      return;
+    }
+    applyTheme(themeMode, event.matches);
+  });
 
   document.addEventListener("click", (event) => {
     if (!settingsPanel || settingsPanel.hidden) {
