@@ -612,6 +612,19 @@ function sortTree(nodes: TreeNode[]): TreeNode[] {
   return nodes;
 }
 
+function parseDateToEpochMs(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getRecentSortEpochMs(doc: DocRecord): number {
+  return parseDateToEpochMs(doc.date) ?? doc.mtimeMs;
+}
+
 function buildPinnedMenuFolder(docs: DocRecord[], options: BuildOptions): FolderNode | null {
   if (!options.pinnedMenu) {
     return null;
@@ -673,7 +686,19 @@ function buildTree(docs: DocRecord[], options: BuildOptions): TreeNode[] {
   sortTree(root.children);
 
   const recentChildren = [...docs]
-    .sort((a, b) => b.mtimeMs - a.mtimeMs)
+    .sort((left, right) => {
+      const byDate = getRecentSortEpochMs(right) - getRecentSortEpochMs(left);
+      if (byDate !== 0) {
+        return byDate;
+      }
+
+      const byMtime = right.mtimeMs - left.mtimeMs;
+      if (byMtime !== 0) {
+        return byMtime;
+      }
+
+      return left.relNoExt.localeCompare(right.relNoExt, "ko-KR");
+    })
     .slice(0, options.recentLimit)
     .map((doc) => fileNodeFromDoc(doc));
 
