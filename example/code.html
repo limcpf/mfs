@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dev Blog Explorer - Latte Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        // Catppuccin Latte inspired colors
+                        "latte-base": "#eff1f5",      // Main background
+                        "latte-mantle": "#e6e9ef",    // Sidebar background
+                        "latte-crust": "#dce0e8",     // Darker elements/borders
+                        "latte-text": "#4c4f69",      // Main text
+                        "latte-subtext0": "#6c6f85",  // Secondary text
+                        "latte-subtext1": "#5c5f77",
+                        "latte-overlay0": "#9ca0b0",  // Muted text
+                        "latte-surface0": "#ccd0da",  // Borders
+                        "latte-surface1": "#bcc0cc",
+                        "latte-surface2": "#acb0be",
+                        // Accents
+                        "latte-rosewater": "#dc8a78",
+                        "latte-flamingo": "#dd7878",
+                        "latte-pink": "#ea76cb",
+                        "latte-mauve": "#8839ef",
+                        "latte-red": "#d20f39",
+                        "latte-maroon": "#e64553",
+                        "latte-peach": "#fe640b",
+                        "latte-yellow": "#df8e1d",
+                        "latte-green": "#40a02b",
+                        "latte-teal": "#179299",
+                        "latte-sky": "#04a5e5",
+                        "latte-sapphire": "#209fb5",
+                        "latte-blue": "#1e66f5",
+                        "latte-lavender": "#7287fd",
+                        "code-bg": "#e6e9ef", // Slightly darker than base for code blocks
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "Fira Code", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e6e9ef; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccd0da; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #bcc0cc; 
+        }
+    </style>
+</head>
+<body class="bg-latte-base text-latte-text font-display overflow-hidden h-screen w-screen flex antialiased selection:bg-latte-rosewater selection:text-white">
+<aside class="w-[30%] min-w-[300px] max-w-[450px] bg-latte-mantle border-r border-latte-surface0 flex flex-col h-full shrink-0">
+<div class="p-6 border-b border-latte-surface0">
+<h1 class="text-lg font-bold tracking-tight text-latte-text flex items-center gap-2">
+<span class="material-symbols-outlined text-latte-mauve text-[20px]">terminal</span>
+                ~/dev-blog
+            </h1>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-latte-base text-latte-subtext1 border border-latte-surface0 shadow-sm">
+<span class="material-symbols-outlined text-[12px] align-middle mr-1">call_split</span>main
+                </span>
+<span class="text-xs text-latte-overlay0">last commit 2h ago</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-1">
+<div class="group">
+<div class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-latte-surface0/50 cursor-pointer text-latte-subtext1 hover:text-latte-text transition-colors">
+<span class="material-symbols-outlined text-latte-blue text-[20px]">folder</span>
+<span class="text-sm font-medium">projects</span>
+</div>
+</div>
+<div class="group">
+<div class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-latte-surface0/50 cursor-pointer text-latte-subtext1 hover:text-latte-text transition-colors">
+<span class="material-symbols-outlined text-latte-blue text-[20px]">folder_open</span>
+<span class="text-sm font-medium">posts</span>
+</div>
+<div class="pl-6 mt-1 space-y-1 border-l border-latte-surface0 ml-4">
+<div class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-latte-surface0/50 cursor-pointer text-latte-subtext1 hover:text-latte-text transition-colors">
+<span class="material-symbols-outlined text-latte-blue text-[20px]">folder_open</span>
+<span class="text-sm font-medium">2024</span>
+</div>
+<div class="pl-6 mt-1 space-y-1 border-l border-latte-surface0 ml-4">
+<div class="flex items-center gap-2 px-3 py-2 rounded-md bg-white shadow-sm border border-latte-surface0 text-latte-text border-l-4 border-l-latte-mauve cursor-pointer transition-all group/file">
+<span class="material-symbols-outlined text-latte-mauve text-[20px]">article</span>
+<span class="text-sm font-medium">file-system-blog.md</span>
+<span class="ml-auto text-[10px] bg-latte-mauve/10 text-latte-mauve px-1.5 py-0.5 rounded opacity-100 transition-opacity font-bold">active</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-latte-surface0/50 cursor-pointer text-latte-subtext1 hover:text-latte-text transition-colors">
+<span class="material-symbols-outlined text-latte-overlay0 text-[20px]">article</span>
+<span class="text-sm font-medium">setup-guide.md</span>
+</div>
+</div>
+</div>
+<div class="pl-6 mt-1 space-y-1 border-l border-latte-surface0 ml-4">
+<div class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-latte-surface0/50 cursor-pointer text-latte-subtext1 hover:text-latte-text transition-colors">
+<span class="material-symbols-outlined text-latte-blue text-[20px]">folder</span>
+<span class="text-sm font-medium">2023</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-latte-surface0/50 cursor-pointer text-latte-subtext1 hover:text-latte-text transition-colors">
+<span class="material-symbols-outlined text-latte-teal text-[20px]">info</span>
+<span class="text-sm font-medium">about.md</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-latte-surface0/50 cursor-pointer text-latte-subtext1 hover:text-latte-text transition-colors">
+<span class="material-symbols-outlined text-latte-rosewater text-[20px]">mail</span>
+<span class="text-sm font-medium">contact.md</span>
+</div>
+</div>
+<div class="p-3 bg-latte-crust border-t border-latte-surface0 text-xs text-latte-subtext1 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-latte-green animate-pulse"></span>
+<span>Online</span>
+</div>
+<div class="text-latte-overlay0 font-mono">UTF-8</div>
+</div>
+</aside>
+<main class="flex-1 h-full overflow-y-auto bg-latte-base relative">
+<div class="max-w-[800px] mx-auto px-8 py-16 md:px-12 md:py-20">
+<div class="flex items-center gap-2 text-sm text-latte-overlay0 mb-8 font-mono">
+<span>~/posts</span>
+<span class="material-symbols-outlined text-[14px] text-latte-surface2">chevron_right</span>
+<span>2024</span>
+<span class="material-symbols-outlined text-[14px] text-latte-surface2">chevron_right</span>
+<span class="text-latte-mauve font-medium">file-system-blog.md</span>
+</div>
+<header class="mb-10">
+<h1 class="text-4xl md:text-5xl font-bold text-latte-text mb-4 leading-tight tracking-tight">
+                    Building a File-System Blog
+                </h1>
+<div class="flex items-center gap-4 text-sm font-mono text-latte-subtext0">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-latte-overlay0">calendar_today</span>
+                        // Oct 24, 2024
+                    </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-latte-overlay0">schedule</span>
+                        // 5 min read
+                    </span>
+<span class="flex items-center gap-1 text-latte-lavender">
+<span class="material-symbols-outlined text-[16px]">tag</span>
+                        #react #nextjs
+                    </span>
+</div>
+</header>
+<article class="prose prose-slate max-w-none text-latte-text leading-relaxed prose-headings:text-latte-text prose-strong:text-latte-text prose-code:text-latte-mauve">
+<p class="text-lg mb-6 text-latte-subtext0">
+                    This post explores how to build a developer blog that mimics a file system. We will cover the recursive component logic and state management for the directory tree, creating a seamless navigation experience that feels just like your favorite IDE.
+                </p>
+<h3 class="text-2xl font-semibold text-latte-text mt-8 mb-4 flex items-center gap-2">
+<span class="text-latte-peach">#</span> The Recursive Component
+                </h3>
+<p class="mb-6 text-latte-subtext0">
+                    The core of our file explorer is a recursive component. Since folders can contain other folders infinitely deep, we need a component that can call itself. Here is a simplified version of the <code class="bg-latte-mantle px-1.5 py-0.5 rounded text-sm text-latte-mauve border border-latte-surface0 font-mono">FileTree.js</code> component.
+                </p>
+<div class="rounded-lg overflow-hidden my-8 border border-latte-surface0 bg-latte-mantle shadow-sm">
+<div class="flex items-center justify-between px-4 py-2 bg-latte-crust/50 border-b border-latte-surface0">
+<div class="flex gap-1.5">
+<div class="w-3 h-3 rounded-full bg-latte-red"></div>
+<div class="w-3 h-3 rounded-full bg-latte-yellow"></div>
+<div class="w-3 h-3 rounded-full bg-latte-green"></div>
+</div>
+<span class="text-xs text-latte-overlay0 font-mono">components/FileTree.js</span>
+<div class="text-latte-overlay0 hover:text-latte-text cursor-pointer transition-colors" title="Copy code">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</div>
+</div>
+<div class="p-4 overflow-x-auto bg-white/50">
+<pre class="font-mono text-sm leading-6"><code><span class="text-latte-mauve">const</span> <span class="text-latte-blue">FileTree</span> <span class="text-latte-subtext1">=</span> ({ <span class="text-latte-peach">nodes</span> }) <span class="text-latte-subtext1">=&gt;</span> {
+  <span class="text-latte-mauve">return</span> (
+    <span class="text-latte-subtext1">&lt;</span><span class="text-latte-red">div</span> <span class="text-latte-yellow">className</span><span class="text-latte-subtext1">=</span><span class="text-latte-green">"pl-4 border-l border-gray-200"</span><span class="text-latte-subtext1">&gt;</span>
+      {<span class="text-latte-peach">nodes</span>.<span class="text-latte-blue">map</span>((<span class="text-latte-peach">node</span>) <span class="text-latte-subtext1">=&gt;</span> (
+        <span class="text-latte-peach">node</span>.type <span class="text-latte-subtext1">===</span> <span class="text-latte-green">'folder'</span> ? (
+            <span class="text-latte-subtext1">&lt;</span><span class="text-latte-blue">Folder</span> <span class="text-latte-yellow">key</span><span class="text-latte-subtext1">=</span>{<span class="text-latte-peach">node</span>.id} <span class="text-latte-yellow">data</span><span class="text-latte-subtext1">=</span>{<span class="text-latte-peach">node</span>} <span class="text-latte-subtext1">/&gt;</span>
+        ) : (
+            <span class="text-latte-subtext1">&lt;</span><span class="text-latte-blue">File</span> <span class="text-latte-yellow">key</span><span class="text-latte-subtext1">=</span>{<span class="text-latte-peach">node</span>.id} <span class="text-latte-yellow">data</span><span class="text-latte-subtext1">=</span>{<span class="text-latte-peach">node</span>} <span class="text-latte-subtext1">/&gt;</span>
+        )
+      ))}
+    <span class="text-latte-subtext1">&lt;/</span><span class="text-latte-red">div</span><span class="text-latte-subtext1">&gt;</span>
+  );
+};</code></pre>
+</div>
+</div>
+<p class="mb-6 text-latte-subtext0">
+                   By recursively iterating through the nodes, we maintain a clean structure regardless of directory depth. The next step is managing the <strong>expanded</strong> state for each folder, which we can achieve using a simple context provider or local state.
+                </p>
+<blockquote class="pl-4 border-l-4 border-latte-mauve italic text-latte-subtext0 my-8 py-2 bg-latte-mantle/50 rounded-r-lg">
+                    "The best navigation is the one users don't have to think about. It should feel natural, like browsing their own local machine."
+                </blockquote>
+<h3 class="text-2xl font-semibold text-latte-text mt-8 mb-4 flex items-center gap-2">
+<span class="text-latte-peach">#</span> Handling Active States
+                </h3>
+<p class="mb-6 text-latte-subtext0">
+                    Visual feedback is crucial. When a user clicks a file, we want it to highlight. In our case, we are using Tailwind's <code class="bg-latte-mantle px-1.5 py-0.5 rounded text-sm text-latte-mauve border border-latte-surface0 font-mono">bg-mauve/10</code> utility to give it that subtle glow, indicating the currently read file.
+                </p>
+<figure class="my-8">
+<div class="rounded-lg overflow-hidden border border-latte-surface0 bg-latte-base shadow-sm">
+<img class="w-full h-auto opacity-90 hover:opacity-100 transition-opacity duration-500 sepia-[.2]" data-alt="Close up of computer monitor displaying code" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqR3ZSJ_FXDLK0ZZCJ3YHJVyz781M4-yQDCAxRpjLGsNT9bU0T3szdSAco55enHfZuL98tFbWE2o_F64BimMOSwGp6JwkhKc29L-zylI32fc3UWMxTGJ6OqoIvvRyxvEnBiNd8zVPqXdmSFtUkBDRJnTo2LWfu5Wn7Zc6rZiXAcF1cylqd-fAx5PO8xc-8_4s9JQ3G8h-Rs7aJ_2NTfVKnoEGxCI7I8RS4bGouM0ixTLFZagy554e8XcsyC_8MrqohqW6f-2WAa-4"/>
+</div>
+<figcaption class="text-center text-sm text-latte-overlay0 mt-3 italic">// Fig 1. A typical developer environment setup.</figcaption>
+</figure>
+<p class="mb-12 text-latte-subtext0">
+                    In the next post, we will cover how to implement the search functionality using fuzzy search logic to quickly jump between files.
+                </p>
+<hr class="border-latte-surface0 mb-12"/>
+<div class="flex flex-col sm:flex-row justify-between gap-4">
+<a class="group flex-1 p-4 rounded-lg border border-latte-surface0 hover:border-latte-mauve hover:shadow-sm hover:shadow-latte-mauve/10 transition-all bg-white" href="#">
+<div class="text-xs text-latte-overlay0 mb-1 flex items-center gap-1 group-hover:text-latte-mauve transition-colors">
+<span class="material-symbols-outlined text-[14px]">arrow_back</span>
+                            Previous
+                        </div>
+<div class="text-sm font-medium text-latte-text group-hover:text-latte-mauve transition-colors">Introduction to MDX</div>
+</a>
+<a class="group flex-1 p-4 rounded-lg border border-latte-surface0 hover:border-latte-mauve hover:shadow-sm hover:shadow-latte-mauve/10 transition-all text-right bg-white" href="#">
+<div class="text-xs text-latte-overlay0 mb-1 flex items-center gap-1 justify-end group-hover:text-latte-mauve transition-colors">
+                            Next
+                            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</div>
+<div class="text-sm font-medium text-latte-text group-hover:text-latte-mauve transition-colors">Implementing Fuzzy Search</div>
+</a>
+</div>
+</article>
+<div class="h-20"></div>
+</div>
+<div class="absolute bottom-8 right-8">
+<button class="bg-latte-mauve hover:bg-latte-mauve/90 text-white p-3 rounded-full shadow-lg shadow-latte-mauve/30 flex items-center justify-center transition-all hover:scale-105 hover:-translate-y-1">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</main>
+
+</body></html>

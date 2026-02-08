@@ -1,0 +1,111 @@
+export type ImagePolicy = "keep" | "omit-local";
+
+export interface UserConfig {
+  vaultDir?: string;
+  outDir?: string;
+  exclude?: string[];
+  ui?: {
+    newWithinDays?: number;
+    recentLimit?: number;
+  };
+  markdown?: {
+    wikilinks?: boolean;
+    images?: ImagePolicy;
+    gfm?: boolean;
+    highlight?: {
+      engine?: "shiki";
+      theme?: string;
+    };
+  };
+}
+
+export interface BuildOptions {
+  vaultDir: string;
+  outDir: string;
+  exclude: string[];
+  newWithinDays: number;
+  recentLimit: number;
+  wikilinks: boolean;
+  imagePolicy: ImagePolicy;
+  gfm: boolean;
+  shikiTheme: string;
+}
+
+export interface DocRecord {
+  sourcePath: string;
+  relPath: string;
+  relNoExt: string;
+  id: string;
+  route: string;
+  contentUrl: string;
+  fileName: string;
+  title: string;
+  date?: string;
+  description?: string;
+  tags: string[];
+  mtimeMs: number;
+  body: string;
+  raw: string;
+  isNew: boolean;
+}
+
+export interface FileNode {
+  type: "file";
+  name: string;
+  id: string;
+  title: string;
+  route: string;
+  contentUrl: string;
+  mtime: number;
+  isNew: boolean;
+  tags: string[];
+  description?: string;
+  date?: string;
+}
+
+export interface FolderNode {
+  type: "folder";
+  name: string;
+  path: string;
+  virtual?: boolean;
+  children: TreeNode[];
+}
+
+export type TreeNode = FolderNode | FileNode;
+
+export interface Manifest {
+  generatedAt: string;
+  ui: {
+    newWithinDays: number;
+    recentLimit: number;
+  };
+  tree: TreeNode[];
+  routeMap: Record<string, string>;
+  docs: Array<{
+    id: string;
+    route: string;
+    title: string;
+    contentUrl: string;
+    mtime: number;
+    date?: string;
+    tags: string[];
+    description?: string;
+    isNew: boolean;
+  }>;
+}
+
+export interface BuildCache {
+  version: number;
+  docs: Record<
+    string,
+    {
+      hash: string;
+      route: string;
+      relPath: string;
+    }
+  >;
+}
+
+export interface WikiResolver {
+  resolve(input: string): { route: string; label: string } | null;
+}
