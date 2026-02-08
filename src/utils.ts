@@ -19,8 +19,28 @@ export function toDocId(relNoExt: string): string {
   return relNoExt.replace(/\//g, "__");
 }
 
+export function slugifySegment(input: string): string {
+  const normalized = input
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase();
+
+  const slug = normalized
+    .replace(/['’]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^\p{Letter}\p{Number}-]+/gu, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "untitled";
+}
+
 export function toRoute(relNoExt: string): string {
-  return `/${relNoExt}/`;
+  const segments = relNoExt
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => slugifySegment(segment));
+  return `/${segments.join("/")}/`;
 }
 
 export function makeHash(payload: string): string {

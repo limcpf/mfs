@@ -10,7 +10,7 @@
 - 파일 트리 + 브랜치 필터 + 본문 뷰를 하나의 화면에 결합해 "문서 저장소를 읽는 경험"을 만듭니다.
 - 빌드 캐시(`.cache/build-index.json`)로 변경된 문서만 다시 렌더링해 반복 빌드가 빠릅니다.
 - Obsidian 스타일 위키링크(`[[...]]`)를 지원해 기존 작성 습관을 크게 바꾸지 않아도 됩니다.
-- 문서별 고정 URL(`/path/to/doc/`)과 라우트 매핑(`manifest.json`)으로 정적 호스팅에 최적화되어 있습니다.
+- 문서별 슬러그 고정 URL(`/path/to/doc/`)과 라우트 매핑(`manifest.json`)으로 정적 호스팅에 최적화되어 있습니다.
 - 반응형 사이드바, 설정 팝업, 라이트/시스템/다크 테마 전환까지 기본 제공해 바로 운영 가능한 UI를 제공합니다.
 
 **스크린샷 가이드 (원하는 이미지를 아래 설명으로 캡처해서 넣어주세요)**
@@ -25,7 +25,7 @@
 
 **주요 기능**
 - 파일 트리 기반 탐색 UI (폴더/파일 구조 유지)
-- 문서별 고정 URL 경로 생성 (`/path/to/doc/`)
+- 문서별 슬러그 고정 URL 경로 생성 (`/path/to/doc/`)
 - Shiki 기반 코드 하이라이팅
 - Obsidian 스타일 위키링크 `[[...]]` 지원
 - 라이트/시스템/다크 테마 전환 지원 (설정 팝업)
@@ -67,6 +67,30 @@ bun run blog [build|dev|clean] [options]
 - `--recent-limit <n>`: Recent 가상 폴더 노출 개수 (기본: `5`)
 - `--menu-config <path>`: 상단 고정 메뉴(JSON) 설정 파일 경로
 - `--port <n>`: dev 서버 포트 (기본: `3000`)
+
+**릴리즈 단일파일 배포 (GitHub Actions)**
+- 워크플로우 파일: `.github/workflows/release-single-file.yml`
+- 동작: `bun run build` 결과인 `dist`를 단일 `.tar.gz` 파일로 묶어 Release asset으로 업로드
+- 자동 실행: `v*` 태그 푸시 시 실행 (예: `v0.1.0`)
+- 수동 실행: `Actions > Release Single File > Run workflow`에서 `tag`(필수), `asset_name`(선택) 입력
+
+릴리즈 태그 생성 예시
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+**bunx 배포 (npm publish)**
+- 워크플로우 파일: `.github/workflows/publish-bunx.yml`
+- 동작: `v*` 태그 푸시 시 npm에 패키지 publish (`bun publish`)
+- 전제: GitHub 저장소 `Settings > Secrets and variables > Actions`에 `NPM_TOKEN` 추가
+- 검증: 태그 `vX.Y.Z`와 `package.json`의 `version`이 다르면 배포 실패
+
+사용자 실행 예시
+```bash
+bunx @limcpf/mfs build --vault ./vault --out ./dist
+bunx @limcpf/mfs dev --port 3000
+```
 
 예시
 ```bash
@@ -126,7 +150,9 @@ export default {
 - `branch`가 없으면 "브랜치 분류 없음"으로 간주되어 기본 브랜치에서만 노출됩니다.
 - 기본 브랜치 뷰는 `dev + 분류 없음`이며, 다른 브랜치는 해당 브랜치 글만 노출됩니다.
 - `title`이 없으면 파일명에서 자동 생성됩니다.
-- `date`가 없으면 `createdDate`, 그것도 없으면 파일 수정 시각을 기준으로 합니다.
+- 생성일은 `date` 또는 `createdDate`를 사용합니다.
+- 수정일은 `updatedDate`(`modifiedDate`/`lastModified`도 허용)를 사용합니다.
+- 생성/수정일은 frontmatter에 값이 있을 때만 본문 메타에 표시됩니다.
 - `tags`는 문자열 배열로 작성합니다.
 
 ```md
@@ -135,6 +161,7 @@ publish: true
 branch: dev
 title: My Post
 date: "2024-10-24"
+updatedDate: "2024-10-25T14:30:00"
 description: Short summary
 tags: ["dev", "blog"]
 ---
@@ -147,7 +174,7 @@ tags: ["dev", "blog"]
 - `dist/manifest.json`: 트리, 문서 메타, 라우팅 정보
 - `dist/content/*.html`: 각 문서 본문 HTML
 - `dist/_app/index.html`: 앱 셸
-- `dist/<문서 경로>/index.html`: 각 문서 경로
+- `dist/<문서 slug 경로>/index.html`: 각 문서 경로
 - `dist/assets/app.js`, `dist/assets/app.css`: 런타임 UI
 
 **추가로 필요한 문서 목록**

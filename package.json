@@ -1,8 +1,20 @@
 {
-  "name": "fs-blog-v2",
+  "name": "@limcpf/mfs",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
+  "bin": {
+    "mfs": "src/cli.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "bun.lock",
+    "tsconfig.json"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "blog": "bun run src/cli.ts",
     "build": "bun run src/cli.ts build",

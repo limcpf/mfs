@@ -563,7 +563,7 @@ function renderMeta(doc) {
     );
   }
 
-  const updatedAt = formatMetaDateTime(doc.mtime);
+  const updatedAt = formatMetaDateTime(doc.updatedDate);
   if (updatedAt) {
     items.push(
       `<span class="meta-item"><span class="material-symbols-outlined">schedule</span>updated ${escapeHtmlAttr(updatedAt)}</span>`,

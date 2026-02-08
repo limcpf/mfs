@@ -8,7 +8,6 @@ import {
   buildExcluder,
   ensureDir,
   fileExists,
-  formatDateIso,
   makeHash,
   makeTitleFromFileName,
   relativePosix,
@@ -163,28 +162,90 @@ function extractFrontmatterScalar(raw: string, key: string): string | null {
   return value.length > 0 ? value : null;
 }
 
-function pickDocDate(frontmatter: Record<string, unknown>, raw: string, mtimeMs: number): string {
-  const explicitLiteral = extractFrontmatterScalar(raw, "date");
-  if (explicitLiteral) {
-    return explicitLiteral;
+function pickFrontmatterDate(
+  frontmatter: Record<string, unknown>,
+  raw: string,
+  keys: string[],
+): string | undefined {
+  for (const key of keys) {
+    const literal = extractFrontmatterScalar(raw, key);
+    if (literal) {
+      return literal;
+    }
   }
 
-  const createdLiteral = extractFrontmatterScalar(raw, "createdDate");
-  if (createdLiteral) {
-    return createdLiteral;
+  for (const key of keys) {
+    const normalized = normalizeFrontmatterDate(frontmatter[key]);
+    if (normalized) {
+      return normalized;
+    }
   }
 
-  const explicit = normalizeFrontmatterDate(frontmatter.date);
-  if (explicit) {
-    return explicit;
+  return undefined;
+}
+
+function pickDocDate(frontmatter: Record<string, unknown>, raw: string): string | undefined {
+  return pickFrontmatterDate(frontmatter, raw, ["date", "createdDate"]);
+}
+
+function pickDocUpdatedDate(frontmatter: Record<string, unknown>, raw: string): string | undefined {
+  return pickFrontmatterDate(frontmatter, raw, ["updatedDate", "modifiedDate", "lastModified"]);
+}
+
+function appendRouteSuffix(route: string, suffix: string): string {
+  const clean = route.replace(/^\/+/, "").replace(/\/+$/, "");
+  if (!clean) {
+    return `/${suffix}/`;
   }
 
-  const created = normalizeFrontmatterDate(frontmatter.createdDate);
-  if (created) {
-    return created;
+  const segments = clean.split("/");
+  const last = segments.pop() ?? "doc";
+  segments.push(`${last}-${suffix}`);
+  return `/${segments.join("/")}/`;
+}
+
+function ensureUniqueRoutes(docs: DocRecord[]): void {
+  const initialBuckets = new Map<string, DocRecord[]>();
+  for (const doc of docs) {
+    const bucket = initialBuckets.get(doc.route) ?? [];
+    bucket.push(doc);
+    initialBuckets.set(doc.route, bucket);
   }
 
-  return formatDateIso(new Date(mtimeMs));
+  for (const [route, bucket] of initialBuckets.entries()) {
+    if (bucket.length <= 1) {
+      continue;
+    }
+    console.warn(
+      `[route] Duplicate slug route "${route}" detected. Applying suffixes: ${bucket.map((doc) => doc.relPath).join(", ")}`,
+    );
+  }
+
+  const used = new Set<string>();
+  const sorted = [...docs].sort((left, right) => left.relNoExt.localeCompare(right.relNoExt, "ko-KR"));
+
+  for (const doc of sorted) {
+    const baseRoute = doc.route;
+    let candidate = baseRoute;
+
+    if (used.has(candidate)) {
+      const digest = makeHash(doc.id);
+      let len = 6;
+      while (used.has(candidate)) {
+        const suffix = digest.slice(0, len);
+        candidate = appendRouteSuffix(baseRoute, suffix);
+        len += 2;
+
+        if (len > digest.length) {
+          candidate = appendRouteSuffix(baseRoute, doc.id.replace(/__/g, "-"));
+          break;
+        }
+      }
+    }
+
+    doc.route = candidate;
+    used.add(candidate);
+  }
 }
 
 async function readPublishedDocs(options: BuildOptions): Promise<DocRecord[]> {
@@ -228,7 +289,8 @@ async function readPublishedDocs(options: BuildOptions): Promise<DocRecord[]> {
       contentUrl: `/content/${toContentFileName(id)}`,
       fileName,
       title: typeof parsed.data.title === "string" && parsed.data.title.trim().length > 0 ? parsed.data.title.trim() : makeTitleFromFileName(fileName),
-      date: pickDocDate(parsed.data as Record<string, unknown>, raw, mtimeMs),
+      date: pickDocDate(parsed.data as Record<string, unknown>, raw),
+      updatedDate: pickDocUpdatedDate(parsed.data as Record<string, unknown>, raw),
       description: typeof parsed.data.description === "string" ? parsed.data.description : undefined,
       tags: parseStringArray(parsed.data.tags),
       mtimeMs,
@@ -239,6 +301,7 @@ async function readPublishedDocs(options: BuildOptions): Promise<DocRecord[]> {
     });
   }
 
+  ensureUniqueRoutes(docs);
   return docs;
 }
 
@@ -305,6 +368,7 @@ function fileNodeFromDoc(doc: DocRecord): FileNode {
     tags: doc.tags,
     description: doc.description,
     date: doc.date,
+    updatedDate: doc.updatedDate,
     branch: doc.branch,
   };
 }
@@ -421,6 +485,7 @@ function buildManifest(docs: DocRecord[], tree: TreeNode[], options: BuildOption
       title: doc.title,
       mtime: doc.mtimeMs,
       date: doc.date,
+      updatedDate: doc.updatedDate,
       tags: doc.tags,
       description: doc.description,
       isNew: doc.isNew,
@@ -476,7 +541,7 @@ async function writeShellPages(outDir: string, docs: DocRecord[]): Promise<void>
   await Bun.write(path.join(outDir, "404.html"), render404Html());
 
   for (const doc of docs) {
-    const routeDir = path.join(outDir, doc.relNoExt);
+    const routeDir = path.join(outDir, doc.route.replace(/^\/+/, "").replace(/\/+$/, ""));
     await ensureDir(routeDir);
     await Bun.write(path.join(routeDir, "index.html"), shell);
   }
@@ -484,9 +549,17 @@ async function writeShellPages(outDir: string, docs: DocRecord[]): Promise<void>
 
 async function cleanRemovedOutputs(outDir: string, oldCache: BuildCache, currentDocs: DocRecord[]): Promise<void> {
   const currentIds = new Set(currentDocs.map((doc) => doc.id));
+  const currentRouteById = new Map(currentDocs.map((doc) => [doc.id, doc.route]));
 
   for (const [id, entry] of Object.entries(oldCache.docs)) {
     if (currentIds.has(id)) {
+      const currentRoute = currentRouteById.get(id);
+      if (currentRoute && currentRoute !== entry.route) {
+        const previousRouteDir = path.join(outDir, entry.route.replace(/^\//, "").replace(/\/$/, ""));
+        const previousRouteIndex = path.join(previousRouteDir, "index.html");
+        await removeFileIfExists(previousRouteIndex);
+        await removeEmptyParents(previousRouteDir, outDir);
+      }
       continue;
     }
 

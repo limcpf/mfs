@@ -47,6 +47,7 @@ export interface DocRecord {
   fileName: string;
   title: string;
   date?: string;
+  updatedDate?: string;
   description?: string;
   tags: string[];
   mtimeMs: number;
@@ -68,6 +69,7 @@ export interface FileNode {
   tags: string[];
   description?: string;
   date?: string;
+  updatedDate?: string;
   branch: string | null;
 }
 
@@ -98,6 +100,7 @@ export interface Manifest {
     contentUrl: string;
     mtime: number;
     date?: string;
+    updatedDate?: string;
     tags: string[];
     description?: string;
     isNew: boolean;
