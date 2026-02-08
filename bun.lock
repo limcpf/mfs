@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "fs-blog-v2",
+      "name": "@limcpf/everything-is-a-markdown",
       "dependencies": {
         "chokidar": "^4.0.3",
         "gray-matter": "^4.0.3",

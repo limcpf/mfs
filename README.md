@@ -1,4 +1,4 @@
-# fs-blog-v2
+# Everything-Is-A-Markdown (EIAM)
 
 로컬 Markdown 볼트를 **파일 탐색기 UX 그대로** 웹에 공개할 수 있게 만드는 정적 블로그 빌더입니다.
 
@@ -88,8 +88,11 @@ git push origin v0.1.0
 
 사용자 실행 예시
 ```bash
-bunx @limcpf/mfs build --vault ./vault --out ./dist
-bunx @limcpf/mfs dev --port 3000
+bunx @limcpf/everything-is-a-markdown build --vault ./vault --out ./dist
+bunx @limcpf/everything-is-a-markdown dev --port 3000
+
+# 축약 실행 (bin: eiam)
+bunx --package @limcpf/everything-is-a-markdown eiam build --vault ./vault --out ./dist
 ```
 
 예시

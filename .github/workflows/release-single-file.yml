@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-      ASSET_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.asset_name || format('fs-blog-v2-{0}.tar.gz', github.ref_name) }}
+      ASSET_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.asset_name || format('everything-is-a-markdown-{0}.tar.gz', github.ref_name) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
