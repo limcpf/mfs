@@ -19,6 +19,10 @@ export interface UserConfig {
   vaultDir?: string;
   outDir?: string;
   exclude?: string[];
+  pinnedMenu?: {
+    label?: string;
+    sourceDir: string;
+  };
   ui?: {
     newWithinDays?: number;
     recentLimit?: number;

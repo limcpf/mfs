@@ -462,7 +462,7 @@ function toDocRecord(
     body: entry.body,
     rawHash: entry.rawHash,
     wikiTargets: entry.wikiTargets,
-    isNew: entry.mtimeMs >= newThreshold,
+    isNew: isNewByFrontmatterDate(entry.date, newThreshold),
     branch: entry.branch,
   };
 }
@@ -619,6 +619,11 @@ function parseDateToEpochMs(value: string | undefined): number | null {
 
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isNewByFrontmatterDate(date: string | undefined, newThreshold: number): boolean {
+  const publishedAt = parseDateToEpochMs(date);
+  return publishedAt != null && publishedAt >= newThreshold;
 }
 
 function getRecentSortEpochMs(doc: DocRecord): number {

@@ -65,7 +65,7 @@ bun run blog [build|dev|clean] [options]
 - `--exclude <glob>`: 제외 패턴 (반복 가능, 기본 포함: `.obsidian/**`)
 - `--new-within-days <n>`: NEW 배지 기준 일수 (기본: `7`)
 - `--recent-limit <n>`: Recent 가상 폴더 노출 개수 (기본: `5`)
-- `--menu-config <path>`: 상단 고정 메뉴(JSON) 설정 파일 경로
+- `--menu-config <path>`: 상단 고정 메뉴를 JSON 파일로 임시 덮어쓰기(선택)
 - `--port <n>`: dev 서버 포트 (기본: `3000`)
 
 **릴리즈 단일파일 배포 (GitHub Actions)**
@@ -106,21 +106,9 @@ bun run dev -- --port 4000
 # 제외 패턴 추가
 bun run build -- --exclude "private/**" --exclude "**/drafts/**"
 
-# 상단 고정 메뉴 추가
+# 상단 고정 메뉴 임시 덮어쓰기(선택)
 bun run build -- --menu-config ./menu.config.json
 ```
-
-고정 메뉴 설정 파일 예시 (`menu.config.json`)
-```json
-{
-  "pinnedMenu": {
-    "label": "NOTICE",
-    "sourceDir": "Log/(Blog)/Notice"
-  }
-}
-```
-- `label`: 탐색기에서 Recent 위에 표시할 고정 메뉴 이름
-- `sourceDir`: vault 기준 실제 물리 디렉터리 경로 (해당 하위 문서만 고정 메뉴에 노출)
 
 **설정 파일**
 프로젝트 루트에 `blog.config.ts|js|mjs|cjs`를 두면 CLI 옵션과 병합됩니다.
@@ -139,6 +127,10 @@ export default {
     newWithinDays: 7,
     recentLimit: 5,
   },
+  pinnedMenu: {
+    label: "NOTICE",
+    sourceDir: "Log/(Blog)/Notice",
+  },
   markdown: {
     wikilinks: true,
     images: "omit-local", // "keep" | "omit-local"
@@ -149,6 +141,11 @@ export default {
   },
 };
 ```
+
+고정 메뉴 설정 메모
+- `pinnedMenu.label`: 탐색기에서 Recent 위에 표시할 이름 (미지정 시 `NOTICE`)
+- `pinnedMenu.sourceDir`: vault 기준 실제 물리 디렉터리 경로
+- `--menu-config`를 주면 `blog.config.*`의 `pinnedMenu`를 해당 실행에서만 덮어씁니다.
 
 SEO 설정 메모
 - `seo.siteUrl`: 필수. 절대 origin만 허용됩니다 (예: `https://example.com`, path/query/hash 불가).

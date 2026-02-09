@@ -96,12 +96,12 @@ export async function loadUserConfig(cwd = process.cwd()): Promise<UserConfig> {
   return {};
 }
 
-function normalizePinnedMenu(raw: unknown): PinnedMenuOption | null {
+function normalizePinnedMenu(raw: unknown, errorPrefix = "[config]"): PinnedMenuOption | null {
   if (raw == null) {
     return null;
   }
   if (typeof raw !== "object") {
-    throw new Error(`[menu-config] "pinnedMenu" must be an object`);
+    throw new Error(`${errorPrefix} "pinnedMenu" must be an object`);
   }
 
   const menu = raw as Record<string, unknown>;
@@ -109,7 +109,7 @@ function normalizePinnedMenu(raw: unknown): PinnedMenuOption | null {
   const labelRaw = menu.label;
 
   if (typeof sourceDirRaw !== "string" || sourceDirRaw.trim().length === 0) {
-    throw new Error(`[menu-config] "pinnedMenu.sourceDir" must be a non-empty string`);
+    throw new Error(`${errorPrefix} "pinnedMenu.sourceDir" must be a non-empty string`);
   }
 
   const normalizedSourceDir = sourceDirRaw
@@ -118,7 +118,7 @@ function normalizePinnedMenu(raw: unknown): PinnedMenuOption | null {
     .replace(/^\/+/, "")
     .replace(/\/+$/, "");
   if (!normalizedSourceDir) {
-    throw new Error(`[menu-config] "pinnedMenu.sourceDir" must not be root`);
+    throw new Error(`${errorPrefix} "pinnedMenu.sourceDir" must not be root`);
   }
 
   const label =
@@ -157,7 +157,7 @@ export async function loadPinnedMenuConfig(
     throw new Error("[menu-config] top-level JSON must be an object");
   }
 
-  return normalizePinnedMenu((parsed as Record<string, unknown>).pinnedMenu);
+  return normalizePinnedMenu((parsed as Record<string, unknown>).pinnedMenu, "[menu-config]");
 }
 
 export function resolveBuildOptions(
@@ -170,6 +170,8 @@ export function resolveBuildOptions(
   const cliExclude = cli.exclude ?? [];
   const mergedExclude = Array.from(new Set([...DEFAULTS.exclude, ...cfgExclude, ...cliExclude]));
   const seo = normalizeSeoConfig(userConfig.seo);
+  const configPinnedMenu = normalizePinnedMenu(userConfig.pinnedMenu, "[config]");
+  const resolvedPinnedMenu = pinnedMenu ?? configPinnedMenu;
 
   return {
     vaultDir: path.resolve(cwd, cli.vaultDir ?? userConfig.vaultDir ?? DEFAULTS.vaultDir),
@@ -177,7 +179,7 @@ export function resolveBuildOptions(
     exclude: mergedExclude,
     newWithinDays: cli.newWithinDays ?? userConfig.ui?.newWithinDays ?? DEFAULTS.newWithinDays,
     recentLimit: cli.recentLimit ?? userConfig.ui?.recentLimit ?? DEFAULTS.recentLimit,
-    pinnedMenu,
+    pinnedMenu: resolvedPinnedMenu,
     wikilinks: userConfig.markdown?.wikilinks ?? DEFAULTS.wikilinks,
     imagePolicy: userConfig.markdown?.images ?? DEFAULTS.imagePolicy,
     gfm: userConfig.markdown?.gfm ?? DEFAULTS.gfm,
@@ -199,7 +201,7 @@ Options:
   --exclude <glob>          Exclude glob pattern (repeatable)
   --new-within-days <n>     NEW badge threshold days (default: 7)
   --recent-limit <n>        Recent virtual folder item count (default: 5)
-  --menu-config <path>      JSON file path for pinned menu config
+  --menu-config <path>      JSON file path to override pinnedMenu (optional)
   --port <n>                Dev server port (default: 3000)
   -h, --help                Show help
 `);
