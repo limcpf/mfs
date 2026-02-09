@@ -82,6 +82,7 @@ export interface DocRecord {
   contentUrl: string;
   fileName: string;
   title: string;
+  prefix?: string;
   date?: string;
   updatedDate?: string;
   description?: string;
@@ -99,9 +100,9 @@ export interface FileNode {
   name: string;
   id: string;
   title: string;
+  prefix?: string;
   route: string;
   contentUrl: string;
-  mtime: number;
   isNew: boolean;
   tags: string[];
   description?: string;
@@ -134,8 +135,8 @@ export interface Manifest {
     id: string;
     route: string;
     title: string;
+    prefix?: string;
     contentUrl: string;
-    mtime: number;
     date?: string;
     updatedDate?: string;
     tags: string[];
@@ -156,6 +157,7 @@ export interface BuildCache {
       publish: boolean;
       draft: boolean;
       title?: string;
+      prefix?: string;
       date?: string;
       updatedDate?: string;
       description?: string;

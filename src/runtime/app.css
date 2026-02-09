@@ -478,6 +478,14 @@ a:hover {
   color: var(--latte-overlay0);
 }
 
+.tree-prefix {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--latte-overlay1);
+}
+
 .tree-label {
   flex: 1;
   overflow: hidden;
@@ -841,6 +849,13 @@ body.mobile-toggle-left .mobile-menu-toggle {
 .meta-item .material-symbols-outlined {
   font-size: 16px;
   color: var(--latte-overlay0);
+}
+
+.meta-prefix {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--latte-overlay1);
 }
 
 .meta-tags {

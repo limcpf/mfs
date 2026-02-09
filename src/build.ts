@@ -20,7 +20,7 @@ import {
   toRoute,
 } from "./utils";
 
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 const CACHE_DIR_NAME = ".cache";
 const CACHE_FILE_NAME = "build-index.json";
 const DEFAULT_BRANCH = "dev";
@@ -121,6 +121,7 @@ function normalizeCachedSourceEntry(value: unknown): CachedSourceEntry | null {
   const publish = value.publish === true;
   const draft = value.draft === true;
   const title = typeof value.title === "string" && value.title.trim().length > 0 ? value.title.trim() : undefined;
+  const prefix = typeof value.prefix === "string" && value.prefix.trim().length > 0 ? value.prefix.trim() : undefined;
   const date = typeof value.date === "string" && value.date.trim().length > 0 ? value.date.trim() : undefined;
   const updatedDate =
     typeof value.updatedDate === "string" && value.updatedDate.trim().length > 0 ? value.updatedDate.trim() : undefined;
@@ -142,6 +143,7 @@ function normalizeCachedSourceEntry(value: unknown): CachedSourceEntry | null {
     publish,
     draft,
     title,
+    prefix,
     date,
     updatedDate,
     description,
@@ -329,6 +331,25 @@ function pickDocUpdatedDate(frontmatter: Record<string, unknown>, raw: string): 
   return pickFrontmatterDate(frontmatter, raw, ["updatedDate", "modifiedDate", "lastModified"]);
 }
 
+function pickDocPrefix(frontmatter: Record<string, unknown>, raw: string): string | undefined {
+  const literal = extractFrontmatterScalar(raw, "prefix");
+  if (literal) {
+    return literal;
+  }
+
+  const value = frontmatter.prefix;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return undefined;
+}
+
 function appendRouteSuffix(route: string, suffix: string): string {
   const clean = route.replace(/^\/+/, "").replace(/\/+$/, "");
   if (!clean) {
@@ -431,6 +452,7 @@ function toCachedSourceEntry(raw: string, parsed: matter.GrayMatterFile<string>)
     publish: parsed.data.publish === true,
     draft: parsed.data.draft === true,
     title: typeof parsed.data.title === "string" && parsed.data.title.trim().length > 0 ? parsed.data.title.trim() : undefined,
+    prefix: pickDocPrefix(parsed.data as Record<string, unknown>, raw),
     date: pickDocDate(parsed.data as Record<string, unknown>, raw),
     updatedDate: pickDocUpdatedDate(parsed.data as Record<string, unknown>, raw),
     description: typeof parsed.data.description === "string" ? parsed.data.description.trim() || undefined : undefined,
@@ -460,6 +482,7 @@ function toDocRecord(
     contentUrl: `/content/${toContentFileName(id)}`,
     fileName,
     title: entry.title ?? makeTitleFromFileName(fileName),
+    prefix: entry.prefix,
     date: entry.date,
     updatedDate: entry.updatedDate,
     description: entry.description,
@@ -589,9 +612,9 @@ function fileNodeFromDoc(doc: DocRecord): FileNode {
     name: doc.fileName,
     id: doc.id,
     title: doc.title,
+    prefix: doc.prefix,
     route: doc.route,
     contentUrl: doc.contentUrl,
-    mtime: doc.mtimeMs,
     isNew: doc.isNew,
     tags: doc.tags,
     description: doc.description,
@@ -633,7 +656,32 @@ function isNewByFrontmatterDate(date: string | undefined, newThreshold: number):
 }
 
 function getRecentSortEpochMs(doc: DocRecord): number {
-  return parseDateToEpochMs(doc.date) ?? doc.mtimeMs;
+  return parseDateToEpochMs(doc.updatedDate) ?? parseDateToEpochMs(doc.date);
+}
+
+function compareByRecentDateThenPath(left: DocRecord, right: DocRecord): number {
+  const leftEpoch = getRecentSortEpochMs(left);
+  const rightEpoch = getRecentSortEpochMs(right);
+
+  if (leftEpoch != null && rightEpoch != null) {
+    const byDate = rightEpoch - leftEpoch;
+    if (byDate !== 0) {
+      return byDate;
+    }
+  } else if (leftEpoch != null && rightEpoch == null) {
+    return -1;
+  } else if (leftEpoch == null && rightEpoch != null) {
+    return 1;
+  }
+
+  return left.relNoExt.localeCompare(right.relNoExt, "ko-KR");
+}
+
+function pickHomeDoc(docs: DocRecord[]): DocRecord | null {
+  const inDefaultBranch = docs.filter((doc) => doc.branch == null || doc.branch === DEFAULT_BRANCH);
+  const candidates = inDefaultBranch.length > 0 ? inDefaultBranch : docs;
+  const byRoute = candidates.find((doc) => doc.route === "/index/");
+  return byRoute ?? candidates[0] ?? null;
 }
 
 function buildPinnedMenuFolder(docs: DocRecord[], options: BuildOptions): FolderNode | null {
@@ -697,19 +745,7 @@ function buildTree(docs: DocRecord[], options: BuildOptions): TreeNode[] {
   sortTree(root.children);
 
   const recentChildren = [...docs]
-    .sort((left, right) => {
-      const byDate = getRecentSortEpochMs(right) - getRecentSortEpochMs(left);
-      if (byDate !== 0) {
-        return byDate;
-      }
-
-      const byMtime = right.mtimeMs - left.mtimeMs;
-      if (byMtime !== 0) {
-        return byMtime;
-      }
-
-      return left.relNoExt.localeCompare(right.relNoExt, "ko-KR");
-    })
+    .sort(compareByRecentDateThenPath)
     .slice(0, options.recentLimit)
     .map((doc) => fileNodeFromDoc(doc));
 
@@ -735,21 +771,19 @@ function buildManifest(docs: DocRecord[], tree: TreeNode[], options: BuildOption
     routeMap[doc.route] = doc.id;
   }
 
-  const docsForManifest = [...docs]
-    .sort((a, b) => b.mtimeMs - a.mtimeMs)
-    .map((doc) => ({
-      id: doc.id,
-      route: doc.route,
-      title: doc.title,
-      mtime: doc.mtimeMs,
-      date: doc.date,
-      updatedDate: doc.updatedDate,
-      tags: doc.tags,
-      description: doc.description,
-      isNew: doc.isNew,
-      contentUrl: doc.contentUrl,
-      branch: doc.branch,
-    }));
+  const docsForManifest = docs.map((doc) => ({
+    id: doc.id,
+    route: doc.route,
+    title: doc.title,
+    prefix: doc.prefix,
+    date: doc.date,
+    updatedDate: doc.updatedDate,
+    tags: doc.tags,
+    description: doc.description,
+    isNew: doc.isNew,
+    contentUrl: doc.contentUrl,
+    branch: doc.branch,
+  }));
 
   const branchSet = new Set<string>([DEFAULT_BRANCH]);
   for (const doc of docs) {
@@ -984,17 +1018,14 @@ function normalizeTags(tags: string[]): string[] {
 function renderInitialMeta(doc: DocRecord): string {
   const items: string[] = [];
 
+  if (doc.prefix) {
+    items.push(`<span class="meta-item meta-prefix">${escapeHtmlAttribute(doc.prefix)}</span>`);
+  }
+
   const createdAt = formatMetaDateTime(doc.date);
   if (createdAt) {
     items.push(
       `<span class="meta-item"><span class="material-symbols-outlined">calendar_today</span>${escapeHtmlAttribute(createdAt)}</span>`,
-    );
-  }
-
-  const updatedAt = formatMetaDateTime(doc.updatedDate);
-  if (updatedAt) {
-    items.push(
-      `<span class="meta-item"><span class="material-symbols-outlined">schedule</span>updated ${escapeHtmlAttribute(updatedAt)}</span>`,
     );
   }
 
@@ -1047,7 +1078,7 @@ async function writeShellPages(
   runtimeAssets: RuntimeAssets,
   contentByDocId: Map<string, string>,
 ): Promise<void> {
-  const indexDoc = docs[0] ?? null;
+  const indexDoc = pickHomeDoc(docs);
   const indexOutputPath = "index.html";
   const indexInitialView = indexDoc ? buildInitialView(indexDoc, docs, contentByDocId.get(indexDoc.id) ?? "") : null;
   const shell = renderAppShellHtml(

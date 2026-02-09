@@ -217,6 +217,13 @@ function buildBranchView(manifest, branch, defaultBranch) {
   };
 }
 
+function pickHomeRoute(view) {
+  if (view.routeMap["/index/"]) {
+    return "/index/";
+  }
+  return view.docs[0]?.route || "/";
+}
+
 function loadExpandedSet() {
   try {
     const raw = localStorage.getItem(EXPANDED_KEY);
@@ -614,8 +621,11 @@ function createFileNode(node, fileRowsById, depth = 0) {
   row.dataset.fileId = node.id;
   row.style.setProperty("--tree-depth", String(depth));
 
+  const prefix = typeof node.prefix === "string" ? node.prefix.trim() : "";
+  const prefixHtml = prefix ? `<span class="tree-prefix">${escapeHtmlAttr(prefix)}</span>` : "";
+  const label = escapeHtmlAttr(node.title || node.name);
   const newBadge = node.isNew ? `<span class="badge-new">NEW</span>` : "";
-  row.innerHTML = `<span class="material-symbols-outlined">article</span><span class="tree-label">${node.title || node.name}</span>${newBadge}`;
+  row.innerHTML = `<span class="material-symbols-outlined">article</span>${prefixHtml}<span class="tree-label">${label}</span>${newBadge}`;
   fileRowsById.set(node.id, row);
 
   return row;
@@ -684,17 +694,14 @@ function renderBreadcrumb(route) {
 function renderMeta(doc) {
   const items = [];
 
+  if (typeof doc.prefix === "string" && doc.prefix.trim().length > 0) {
+    items.push(`<span class="meta-item meta-prefix">${escapeHtmlAttr(doc.prefix)}</span>`);
+  }
+
   const createdAt = formatMetaDateTime(doc.date);
   if (createdAt) {
     items.push(
       `<span class="meta-item"><span class="material-symbols-outlined">calendar_today</span>${escapeHtmlAttr(createdAt)}</span>`,
-    );
-  }
-
-  const updatedAt = formatMetaDateTime(doc.updatedDate);
-  if (updatedAt) {
-    items.push(
-      `<span class="meta-item"><span class="material-symbols-outlined">schedule</span>updated ${escapeHtmlAttr(updatedAt)}</span>`,
     );
   }
 
@@ -1452,7 +1459,7 @@ async function start() {
       return;
     }
 
-    const fallbackRoute = view.docs[0]?.route || "/";
+    const fallbackRoute = pickHomeRoute(view);
     await state.navigate(fallbackRoute, true);
   };
 
@@ -1461,7 +1468,7 @@ async function start() {
   renderTree(state);
 
   const currentRoute = resolveRouteFromLocation(view.routeMap);
-  const initialRoute = currentRoute === "/" ? view.docs[0]?.route || "/" : currentRoute;
+  const initialRoute = currentRoute === "/" ? pickHomeRoute(view) : currentRoute;
   handleLayoutChange();
   await state.navigate(initialRoute, currentRoute === "/" && initialRoute !== "/");
 

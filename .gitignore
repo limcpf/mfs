@@ -19,3 +19,8 @@ coverage/
 temp/
 *.tmp
 .sisyphus
+
+# Local-only files
+/example/
+/AGENTS.MD
+/AGENTS.md
