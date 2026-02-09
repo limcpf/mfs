@@ -145,7 +145,7 @@ function createMarkdownIt<L extends string, T extends string>(
     md.disable(["table", "strikethrough"]);
   }
 
-  md.renderer.rules.fence = (tokens: RuleTokens, idx: number, _options: RuleOptions, _env: RuleEnv, _self: RuleSelf) => {
+  const fenceRule: RenderRule = (tokens: RuleTokens, idx: number, _options: RuleOptions, _env: RuleEnv, _self: RuleSelf) => {
     const token = tokens[idx];
     const info = token.info.trim();
     const parts = info.split(/\s+/);
@@ -155,12 +155,12 @@ function createMarkdownIt<L extends string, T extends string>(
     let codeHtml: string;
     try {
       codeHtml = highlighter.codeToHtml(token.content, {
-        lang: lang || "text",
+        lang: (lang || "text") as never,
         theme,
       });
     } catch {
       codeHtml = highlighter.codeToHtml(token.content, {
-        lang: "text",
+        lang: "text" as never,
         theme,
       });
     }
@@ -179,9 +179,16 @@ function createMarkdownIt<L extends string, T extends string>(
 
     return `<div class="code-block">${header}${codeHtml}</div>`;
   };
+  md.renderer.rules.fence = fenceRule;
 
   const defaultLinkOpen = md.renderer.rules.link_open as LinkOpenRule | undefined;
-  md.renderer.rules.link_open = (tokens: RuleTokens, idx: number, options: RuleOptions, env: RuleEnv, self: RuleSelf) => {
+  const linkOpenRule: LinkOpenRule = (
+    tokens: RuleTokens,
+    idx: number,
+    options: RuleOptions,
+    env: RuleEnv,
+    self: RuleSelf,
+  ) => {
     const hrefIdx = tokens[idx].attrIndex("href");
     if (hrefIdx >= 0) {
       const href = tokens[idx].attrs?.[hrefIdx]?.[1] ?? "";
@@ -196,6 +203,7 @@ function createMarkdownIt<L extends string, T extends string>(
     }
     return self.renderToken(tokens, idx, options);
   };
+  md.renderer.rules.link_open = linkOpenRule;
 
   return md;
 }
