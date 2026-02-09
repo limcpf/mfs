@@ -199,7 +199,9 @@ export function renderAppShellHtml(
 ${headMeta}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="${escapeHtmlAttribute(symbolFontStylesheet)}" />
+    <link rel="preload" as="style" href="${escapeHtmlAttribute(symbolFontStylesheet)}" />
+    <link rel="stylesheet" href="${escapeHtmlAttribute(symbolFontStylesheet)}" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="${escapeHtmlAttribute(symbolFontStylesheet)}" /></noscript>
     <link rel="stylesheet" href="${escapeHtmlAttribute(assets.cssHref)}" />
   </head>
   <body>
@@ -330,7 +332,9 @@ export function render404Html(assets: AppShellAssets = DEFAULT_ASSETS): string {
     <title>404 - File-System Blog</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="${escapeHtmlAttribute(symbolFontStylesheet)}" />
+    <link rel="preload" as="style" href="${escapeHtmlAttribute(symbolFontStylesheet)}" />
+    <link rel="stylesheet" href="${escapeHtmlAttribute(symbolFontStylesheet)}" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="${escapeHtmlAttribute(symbolFontStylesheet)}" /></noscript>
     <link rel="stylesheet" href="${escapeHtmlAttribute(assets.cssHref)}" />
   </head>
   <body>
