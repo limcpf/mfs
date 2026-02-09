@@ -11,6 +11,7 @@ const DESKTOP_VIEWER_MIN = 680;
 const DESKTOP_SPLITTER_WIDTH = 10;
 const DESKTOP_SPLITTER_STEP = 24;
 const DEFAULT_BRANCH = "dev";
+const DEFAULT_SITE_TITLE = "File-System Blog";
 const BRANCH_KEY = "fsblog.branch";
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -128,6 +129,23 @@ function resolveRouteFromLocation(routeMap) {
   }
 
   return direct;
+}
+
+function resolveSiteTitle(manifest) {
+  const value = typeof manifest?.siteTitle === "string" ? manifest.siteTitle.trim() : "";
+  return value || DEFAULT_SITE_TITLE;
+}
+
+function composeDocumentTitle(pageTitle, siteTitle) {
+  const left = String(pageTitle ?? "").trim();
+  const right = String(siteTitle ?? "").trim();
+  if (!left) {
+    return right || DEFAULT_SITE_TITLE;
+  }
+  if (!right || left === right) {
+    return left;
+  }
+  return `${left} - ${right}`;
 }
 
 function formatMetaDateTime(value) {
@@ -1127,6 +1145,7 @@ async function start() {
     }
     manifest = await manifestRes.json();
   }
+  const siteTitle = resolveSiteTitle(manifest);
   const defaultBranch = normalizeBranch(manifest.defaultBranch) || DEFAULT_BRANCH;
   const availableBranchSet = new Set([defaultBranch]);
   for (const doc of manifest.docs) {
@@ -1296,7 +1315,7 @@ async function start() {
 
       if (shouldUseInitialView) {
         hasHydratedInitialView = true;
-        document.title = `${initialViewData.title} - File-System Blog`;
+        document.title = composeDocumentTitle(initialViewData.title, siteTitle);
         if (viewerEl instanceof HTMLElement) {
           viewerEl.scrollTo(0, 0);
         }
@@ -1320,7 +1339,7 @@ async function start() {
 
       navEl.innerHTML = renderNav(view.docs, view.docIndexById, id);
 
-      document.title = `${doc.title} - File-System Blog`;
+      document.title = composeDocumentTitle(doc.title, siteTitle);
       if (viewerEl instanceof HTMLElement) {
         viewerEl.scrollTo(0, 0);
       }

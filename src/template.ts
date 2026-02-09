@@ -183,6 +183,9 @@ export function renderAppShellHtml(
   const initialManifestScript = renderInitialManifestScript(manifest);
   const symbolFontStylesheet =
     "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap";
+  const appTitle = typeof manifest?.siteTitle === "string" && manifest.siteTitle.trim().length > 0
+    ? manifest.siteTitle.trim()
+    : DEFAULT_TITLE;
   const initialTitle = initialView ? escapeHtmlAttribute(initialView.title) : "문서를 선택하세요";
   const initialBreadcrumb = initialView ? initialView.breadcrumbHtml : "";
   const initialMeta = initialView ? initialView.metaHtml : "";
@@ -213,7 +216,7 @@ ${headMeta}
         <div class="sidebar-header">
           <h1 class="sidebar-title">
             <span class="material-symbols-outlined icon-terminal">terminal</span>
-            ~/dev-blog
+            ${escapeHtmlAttribute(appTitle)}
           </h1>
           <button id="sidebar-close" class="sidebar-close" type="button" aria-label="탐색기 닫기">
             <span class="material-symbols-outlined">close</span>

@@ -804,6 +804,7 @@ function buildManifest(docs: DocRecord[], tree: TreeNode[], options: BuildOption
 
   return {
     generatedAt: new Date().toISOString(),
+    siteTitle: resolveSiteTitle(options),
     defaultBranch: DEFAULT_BRANCH,
     branches,
     ui: {
@@ -814,6 +815,24 @@ function buildManifest(docs: DocRecord[], tree: TreeNode[], options: BuildOption
     routeMap,
     docs: docsForManifest,
   };
+}
+
+function resolveSiteTitle(options: BuildOptions): string {
+  const value = options.siteTitle ?? options.seo?.siteName ?? options.seo?.defaultTitle ?? DEFAULT_SITE_TITLE;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : DEFAULT_SITE_TITLE;
+}
+
+function composeDocumentTitle(pageTitle: string, siteTitle: string): string {
+  const left = pageTitle.trim();
+  const right = siteTitle.trim();
+  if (!left) {
+    return right || DEFAULT_SITE_TITLE;
+  }
+  if (!right || left === right) {
+    return left;
+  }
+  return `${left} - ${right}`;
 }
 
 function pickSeoImageDefaults(
@@ -948,11 +967,13 @@ async function writeRuntimeAssets(context: OutputWriteContext): Promise<RuntimeA
 }
 
 function buildShellMeta(route: string, doc: DocRecord | null, options: BuildOptions): AppShellMeta {
-  const defaultTitle = options.seo?.defaultTitle ?? DEFAULT_SITE_TITLE;
+  const defaultTitle = options.seo?.defaultTitle ?? options.siteTitle ?? DEFAULT_SITE_TITLE;
+  const siteTitle = resolveSiteTitle(options);
   const defaultDescription = options.seo?.defaultDescription ?? DEFAULT_SITE_DESCRIPTION;
   const description = typeof doc?.description === "string" && doc.description.trim().length > 0 ? doc.description.trim() : undefined;
   const canonicalUrl = options.seo ? buildCanonicalUrl(route, options.seo) : undefined;
-  const title = doc?.title ?? defaultTitle;
+  const baseTitle = doc?.title ?? defaultTitle;
+  const title = composeDocumentTitle(baseTitle, siteTitle);
   const imageDefaults = pickSeoImageDefaults(options.seo);
   const ogImage = imageDefaults.og ?? imageDefaults.social ?? undefined;
   const twitterImage = imageDefaults.twitter ?? imageDefaults.social ?? undefined;

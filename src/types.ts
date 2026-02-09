@@ -65,6 +65,7 @@ export interface BuildOptions {
   exclude: string[];
   newWithinDays: number;
   recentLimit: number;
+  siteTitle?: string;
   pinnedMenu: PinnedMenuOption | null;
   wikilinks: boolean;
   imagePolicy: ImagePolicy;
@@ -123,6 +124,7 @@ export type TreeNode = FolderNode | FileNode;
 
 export interface Manifest {
   generatedAt: string;
+  siteTitle: string;
   defaultBranch: string;
   branches: string[];
   ui: {

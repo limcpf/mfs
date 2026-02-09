@@ -170,6 +170,11 @@ export function resolveBuildOptions(
   const cliExclude = cli.exclude ?? [];
   const mergedExclude = Array.from(new Set([...DEFAULTS.exclude, ...cfgExclude, ...cliExclude]));
   const seo = normalizeSeoConfig(userConfig.seo);
+  const siteTitleRaw = userConfig.seo?.siteName ?? userConfig.seo?.defaultTitle;
+  const siteTitle =
+    typeof siteTitleRaw === "string" && siteTitleRaw.trim().length > 0
+      ? siteTitleRaw.trim()
+      : undefined;
   const configPinnedMenu = normalizePinnedMenu(userConfig.pinnedMenu, "[config]");
   const resolvedPinnedMenu = pinnedMenu ?? configPinnedMenu;
 
@@ -179,6 +184,7 @@ export function resolveBuildOptions(
     exclude: mergedExclude,
     newWithinDays: cli.newWithinDays ?? userConfig.ui?.newWithinDays ?? DEFAULTS.newWithinDays,
     recentLimit: cli.recentLimit ?? userConfig.ui?.recentLimit ?? DEFAULTS.recentLimit,
+    siteTitle,
     pinnedMenu: resolvedPinnedMenu,
     wikilinks: userConfig.markdown?.wikilinks ?? DEFAULTS.wikilinks,
     imagePolicy: userConfig.markdown?.images ?? DEFAULTS.imagePolicy,
